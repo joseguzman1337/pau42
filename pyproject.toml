@@ -1,0 +1,16 @@
+[project]
+name = "applipedia-automation"
+version = "0.1.0"
+description = "uv/Python automation for Palo Alto Networks Applipedia login and search"
+requires-python = ">=3.11"
+dependencies = [
+    "playwright>=1.60.0",
+    "python-dotenv>=1.2.2",
+]
+
+[project.scripts]
+applipedia = "applipedia_automation.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

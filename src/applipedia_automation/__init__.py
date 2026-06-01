@@ -1,0 +1,1 @@
+"""Applipedia automation package."""
