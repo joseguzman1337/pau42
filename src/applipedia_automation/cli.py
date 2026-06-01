@@ -19,6 +19,16 @@ BASE_URL = "https://applipedia.paloaltonetworks.com"
 LOGIN_URL = f"{BASE_URL}/api/auth/login/?next=%2F%3Fsearch%3D"
 DEFAULT_STATE_DIR = Path(".auth/applipedia")
 DEFAULT_TIMEOUT_MS = 30_000
+APP_FIELD_MAP = {
+    "Application Name": ("product_name", "application_name", "name"),
+    "Category": ("new_category", "category"),
+    "Subcategory": ("subcategory",),
+    "App-ID Type": ("content_type", "app_id_type", "appid_type"),
+    "Risk": ("risk",),
+    "App-ID Name": ("appid", "app_id", "app_id_name", "new_appid"),
+    "DLP Supported": ("dlp_support", "dlp_supported"),
+    "Requires Decryption": ("need_decryption", "requires_decryption"),
+}
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -203,14 +213,36 @@ def unwrap_results(payload: Any) -> list[dict[str, Any]]:
     return []
 
 
+def format_value(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "Yes" if value else "No"
+    if isinstance(value, list):
+        return "; ".join(format_value(item) for item in value)
+    if isinstance(value, dict):
+        for key in ("display_name", "name", "value", "label"):
+            if key in value:
+                return format_value(value[key])
+        return json.dumps(value, sort_keys=True)
+    return str(value)
+
+
+def get_first_value(row: dict[str, Any], keys: tuple[str, ...]) -> str:
+    for key in keys:
+        if key in row:
+            return format_value(row[key])
+    return ""
+
+
+def normalize_app_row(row: dict[str, Any]) -> dict[str, str]:
+    return {header: get_first_value(row, keys) for header, keys in APP_FIELD_MAP.items()}
+
+
 def print_table(rows: list[dict[str, Any]]) -> None:
-    fields = ["name", "application", "category", "subcategory", "risk", "app_id", "description"]
-    present = [field for field in fields if any(field in row for row in rows)]
-    if not present:
-        present = sorted({key for row in rows for key in row.keys()})[:8]
-    writer = csv.DictWriter(sys.stdout, fieldnames=present, extrasaction="ignore")
+    writer = csv.DictWriter(sys.stdout, fieldnames=list(APP_FIELD_MAP.keys()))
     writer.writeheader()
-    writer.writerows(rows)
+    writer.writerows(normalize_app_row(row) for row in rows)
 
 
 async def run(args: argparse.Namespace) -> None:
