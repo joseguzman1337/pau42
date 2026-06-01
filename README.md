@@ -39,11 +39,18 @@ uv run applipedia --headed search zoom --format csv --limit 50
 uv run applipedia whoami
 ```
 
-CSV search output includes one row per app with these columns:
+CSV search output includes one row per app and normalizes Applipedia's raw response fields into these columns:
 
-```text
-Application Name,Category,Subcategory,App-ID Type,Risk,App-ID Name,DLP Supported,Requires Decryption
-```
+| CSV column | Applipedia field |
+|------------|------------------|
+| Application Name | `product_name` |
+| Category | `new_category` |
+| Subcategory | `subcategory` |
+| App-ID Type | `content_type` |
+| Risk | `risk` |
+| App-ID Name | `appid` |
+| DLP Supported | `dlp_support` |
+| Requires Decryption | `need_decryption` |
 
 The search command calls:
 
