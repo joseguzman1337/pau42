@@ -35,7 +35,7 @@ Complete the Okta flow in the opened browser. The authenticated session is saved
 
 ```bash
 uv run applipedia search ssl --format json
-uv run applipedia --headless search zoom --format csv --limit 50
+uv run applipedia --headed search zoom --format csv --limit 50
 uv run applipedia whoami
 ```
 
@@ -45,4 +45,16 @@ The search command calls:
 https://applipedia.paloaltonetworks.com/api/v1/query/?search=<term>&offset=0&limit=25
 ```
 
-If the saved session has expired, run the headed login command again.
+Use headed mode for search. Applipedia protects the query API with reCAPTCHA risk scoring, and headless Chromium can be blocked with an error like:
+
+```text
+recaptcha_low_score: Risk score too low. Score: 0.0, minimum required: 0.6
+```
+
+This tool does not bypass or evade reCAPTCHA. If you need reliable non-interactive headless access, use an official Palo Alto API, allowlisting, or a service-account flow that does not depend on browser risk scoring.
+
+If the saved session has expired, run the headed login command again:
+
+```bash
+uv run applipedia --headed --prompt-credentials login
+```
