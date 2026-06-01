@@ -239,10 +239,32 @@ def normalize_app_row(row: dict[str, Any]) -> dict[str, str]:
     return {header: get_first_value(row, keys) for header, keys in APP_FIELD_MAP.items()}
 
 
-def print_table(rows: list[dict[str, Any]]) -> None:
-    writer = csv.DictWriter(sys.stdout, fieldnames=list(APP_FIELD_MAP.keys()))
+def write_csv(rows: list[dict[str, Any]], output: Any) -> None:
+    writer = csv.DictWriter(output, fieldnames=list(APP_FIELD_MAP.keys()))
     writer.writeheader()
     writer.writerows(normalize_app_row(row) for row in rows)
+
+
+def print_table(rows: list[dict[str, Any]]) -> None:
+    write_csv(rows, sys.stdout)
+
+
+def write_search_output(payload: Any, *, output_format: str, output_path: str | None) -> None:
+    if output_path:
+        path = Path(output_path).expanduser()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if output_format == "json":
+            path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        else:
+            with path.open("w", encoding="utf-8", newline="") as file:
+                write_csv(unwrap_results(payload), file)
+        print(f"Wrote {output_format.upper()} export to {path}", file=sys.stderr)
+        return
+
+    if output_format == "json":
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print_table(unwrap_results(payload))
 
 
 async def run(args: argparse.Namespace) -> None:
@@ -283,10 +305,7 @@ async def run(args: argparse.Namespace) -> None:
                         password=password,
                     )
                 payload = await search_via_portal(context, args.term, offset=args.offset, limit=args.limit)
-                if args.format == "json":
-                    print(json.dumps(payload, indent=2, sort_keys=True))
-                else:
-                    print_table(unwrap_results(payload))
+                write_search_output(payload, output_format=args.format, output_path=args.output)
                 return
 
             raise RuntimeError(f"Unsupported command: {args.command}")
@@ -318,6 +337,7 @@ def build_parser() -> argparse.ArgumentParser:
     search.add_argument("--offset", type=int, default=0)
     search.add_argument("--limit", type=int, default=25)
     search.add_argument("--format", choices=["json", "csv"], default="json")
+    search.add_argument("-o", "--output", help="Write search results to a file instead of stdout.")
     search.add_argument("--no-login", dest="login", action="store_false", help="Do not attempt login before search.")
     search.add_argument("--login-timeout", type=int, default=300)
     search.set_defaults(login=True)

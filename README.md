@@ -36,8 +36,11 @@ Complete the Okta flow in the opened browser. The authenticated session is saved
 ```bash
 uv run applipedia search ssl --format json
 uv run applipedia --headed search zoom --format csv --limit 50
+uv run applipedia --headed search zoom --format csv --limit 50 --output exports/zoom.csv
 uv run applipedia whoami
 ```
+
+Use `--output` or `-o` to export search results to a file instead of printing them to the console. Parent directories are created automatically. CSV exports use the normalized per-app columns below.
 
 CSV search output includes one row per app and normalizes Applipedia's raw response fields into these columns:
 
